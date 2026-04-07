@@ -2,17 +2,88 @@
 const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 const chatWindow = document.getElementById("chatWindow");
+const workerUrl = "https://still-union-bereaved.wjscata.workers.dev/"; // Replace with your Cloudflare Worker URL
+const chatHistory = [
+  {
+    role: "system",
+    content: "You are a helpful product advisor.",
+  },
+];
+
+// Add one message bubble to the chat window.
+function addMessage(role, text) {
+  const messageEl = document.createElement("div");
+  messageEl.classList.add("msg");
+  messageEl.classList.add(role === "user" ? "user" : "ai");
+
+  const label = role === "user" ? "You" : "Advisor";
+  messageEl.textContent = `${label}: ${text}`;
+
+  chatWindow.appendChild(messageEl);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
 // Set initial message
-chatWindow.textContent = "👋 Hello! How can I help you today?";
+addMessage("assistant", "Hello! How can I help you today?");
 
 /* Handle form submit */
-chatForm.addEventListener("submit", (e) => {
+chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  // When using Cloudflare, you'll need to POST a `messages` array in the body,
-  // and handle the response using: data.choices[0].message.content
+  const question = userInput.value.trim();
+  if (!question) {
+    return;
+  }
 
-  // Show message
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+  addMessage("user", question);
+  userInput.value = "";
+
+  // Add user's message to the conversation we send to the worker.
+  chatHistory.push({
+    role: "user",
+    content: question,
+  });
+
+  const loadingMessage = document.createElement("div");
+  loadingMessage.classList.add("msg", "ai");
+  loadingMessage.textContent = "Advisor: Thinking...";
+  chatWindow.appendChild(loadingMessage);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  try {
+    // Cloudflare Worker expects { messages: [...] } in the body.
+    const response = await fetch(workerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: chatHistory,
+      }),
+    });
+
+    const data = await response.json();
+    const aiResponse = data?.choices?.[0]?.message?.content;
+
+    loadingMessage.remove();
+
+    if (!response.ok || !aiResponse) {
+      throw new Error("Invalid response from worker.");
+    }
+
+    addMessage("assistant", aiResponse);
+
+    // Save assistant response so next question has conversation context.
+    chatHistory.push({
+      role: "assistant",
+      content: aiResponse,
+    });
+  } catch (error) {
+    loadingMessage.remove();
+    addMessage(
+      "assistant",
+      "Sorry, I could not get a response right now. Please try again.",
+    );
+    console.error("Worker request failed:", error);
+  }
 });
