@@ -6,20 +6,41 @@ const workerUrl = "https://still-union-bereaved.wjscata.workers.dev/"; // Replac
 const chatHistory = [
   {
     role: "system",
-    content: "You are a helpful product advisor. Answer questions about our products and help customers find what they need. Use the conversation history to provide context in your responses. Be friendly and concise. Be sure to only answer questions related to our products and services. If you're asked about something besides our products, politely let the user know you can only answer questions about our offerings.",
+    content:
+      "You are a helpful product advisor. Answer questions about our products and help customers find what they need. Use the conversation history to provide context in your responses. Be friendly and concise. Be sure to only answer questions related to our products and services. If you're asked about something besides our products and applications and routines, politely let the user know you can only answer questions about our offerings.",
   },
 ];
 
 // Add one message bubble to the chat window.
 function addMessage(role, text) {
   const messageEl = document.createElement("div");
-  messageEl.classList.add("msg");
+  messageEl.classList.add("msg", "bubble");
   messageEl.classList.add(role === "user" ? "user" : "ai");
 
-  const label = role === "user" ? "You" : "Advisor";
-  messageEl.textContent = `${label}: ${text}`;
+  messageEl.textContent = text;
 
   chatWindow.appendChild(messageEl);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  return messageEl;
+}
+
+// Add one full question-and-answer turn to the chat window.
+function addConversationTurn(question, answer) {
+  const turnEl = document.createElement("div");
+  turnEl.classList.add("chat-turn");
+
+  const questionEl = document.createElement("div");
+  questionEl.classList.add("msg", "bubble", "user");
+  questionEl.textContent = question;
+
+  const answerEl = document.createElement("div");
+  answerEl.classList.add("msg", "bubble", "ai");
+  answerEl.textContent = answer;
+
+  turnEl.appendChild(questionEl);
+  turnEl.appendChild(answerEl);
+  chatWindow.appendChild(turnEl);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
@@ -35,7 +56,7 @@ chatForm.addEventListener("submit", async (e) => {
     return;
   }
 
-  addMessage("user", question);
+  const pendingUserMessage = addMessage("user", question);
   userInput.value = "";
 
   // Add user's message to the conversation we send to the worker.
@@ -45,8 +66,8 @@ chatForm.addEventListener("submit", async (e) => {
   });
 
   const loadingMessage = document.createElement("div");
-  loadingMessage.classList.add("msg", "ai");
-  loadingMessage.textContent = "Advisor: Thinking...";
+  loadingMessage.classList.add("msg", "bubble", "ai", "thinking");
+  loadingMessage.textContent = "Thinking...";
   chatWindow.appendChild(loadingMessage);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
@@ -71,7 +92,9 @@ chatForm.addEventListener("submit", async (e) => {
       throw new Error("Invalid response from worker.");
     }
 
-    addMessage("assistant", aiResponse);
+    pendingUserMessage.remove();
+
+    addConversationTurn(question, aiResponse);
 
     // Save assistant response so next question has conversation context.
     chatHistory.push({
@@ -80,8 +103,9 @@ chatForm.addEventListener("submit", async (e) => {
     });
   } catch (error) {
     loadingMessage.remove();
-    addMessage(
-      "assistant",
+    pendingUserMessage.remove();
+    addConversationTurn(
+      question,
       "Sorry, I could not get a response right now. Please try again.",
     );
     console.error("Worker request failed:", error);

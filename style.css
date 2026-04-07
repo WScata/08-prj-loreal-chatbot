@@ -66,26 +66,60 @@ body {
   font-size: 18px;
   line-height: 1.5;
   overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.96),
     rgba(255, 250, 242, 0.96)
   );
-  white-space: pre-line;
 }
 
-/* messages */
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .msg {
-  margin-bottom: 14px;
   line-height: 1.5;
+  max-width: min(82%, 36rem);
+  padding: 14px 16px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(42, 31, 22, 0.08);
+  white-space: pre-line;
+  overflow: visible;
+  max-height: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.msg.user {
-  color: #ff0038;
+.bubble.user {
+  align-self: flex-end;
+  color: #fff;
+  background: linear-gradient(135deg, #ff0038 0%, #ff2d62 100%);
+  border-bottom-right-radius: 6px;
 }
 
-.msg.ai {
-  color: #5f4632;
+.bubble.ai {
+  align-self: flex-start;
+  color: #3d2b1d;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(255, 247, 236, 0.98)
+  );
+  border: 1px solid rgba(227, 165, 53, 0.28);
+  border-bottom-left-radius: 6px;
+  overflow: visible;
+  max-height: none;
+}
+
+.bubble.thinking {
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* input row */
