@@ -6,7 +6,7 @@ const workerUrl = "https://still-union-bereaved.wjscata.workers.dev/"; // Replac
 const chatHistory = [
   {
     role: "system",
-    content: "You are a helpful product advisor.",
+    content: "You are a helpful product advisor. Answer questions about our products and help customers find what they need. Use the conversation history to provide context in your responses. Be friendly and concise. Be sure to only answer questions related to our products and services. If you're asked about something besides our products, politely let the user know you can only answer questions about our offerings.",
   },
 ];
 
